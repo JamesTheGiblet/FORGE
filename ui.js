@@ -128,6 +128,8 @@ function renderMessages() {
                 </div>
             ` : '';
             
+            const dependencyGraphHtml = msg.dependencyGraph ? renderDependencyGraph(msg.dependencyGraph, msg.id) : '';
+
             messageDiv.innerHTML = `
                 <div class="message-bubble">
                     <div class="generation-header">
@@ -135,6 +137,7 @@ function renderMessages() {
                         <span>${escapeHtml(msg.content)}</span>
                     </div>
                     ${fileTree}
+                    ${dependencyGraphHtml}
                     ${validationBadge}
                     ${assumptions}
                     <div class="action-bar">
@@ -420,6 +423,12 @@ async function submitIntent() {
         const messageId = state.messages[state.messages.length - 1].id;
         state.originalCodeCache.set(messageId, JSON.parse(JSON.stringify(result.files)));
         
+        // Generate Dependency Graph
+        let dependencyGraph = null;
+        if (result.files && result.files.length > 1 && typeof DependencyEngine !== 'undefined') {
+            dependencyGraph = DependencyEngine.buildGraph(result.files);
+        }
+
         // Add AI generation message
         addMessage({
             type: 'generation',
@@ -427,6 +436,7 @@ async function submitIntent() {
             artifacts: result.files,
             validations: result.validations,
             assumptions: result.assumptions,
+            dependencyGraph: dependencyGraph,
             timestamp: Date.now(),
             role: 'assistant'
         });
@@ -1309,3 +1319,60 @@ function setupKeyboardShortcuts() {
         }
     });
 }
+
+// ====================
+// PWA SUPPORT
+// ====================
+let deferredPrompt;
+
+function initPWA() {
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered', reg.scope))
+            .catch(err => console.warn('Service Worker registration failed:', err));
+    }
+
+    // Handle Install Prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Add install button if not present
+        if (!document.getElementById('pwaInstallBtn')) {
+            const btn = document.createElement('button');
+            btn.id = 'pwaInstallBtn';
+            btn.className = 'action-btn primary';
+            btn.innerHTML = '📱 Install App';
+            btn.style.position = 'fixed';
+            btn.style.bottom = '20px';
+            btn.style.right = '20px';
+            btn.style.zIndex = '1000';
+            btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            btn.onclick = installPWA;
+            document.body.appendChild(btn);
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        const btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.remove();
+        deferredPrompt = null;
+        console.log('PWA installed successfully');
+    });
+}
+
+function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+            const btn = document.getElementById('pwaInstallBtn');
+            if (btn) btn.remove();
+        }
+        deferredPrompt = null;
+    });
+}
+
+// Initialize PWA support on load
+window.addEventListener('load', initPWA);
