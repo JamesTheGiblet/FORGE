@@ -11,7 +11,8 @@ const ASSETS = [
     './versioning.js',
     './dependencies.js',
     './ui-enhancements.js',
-    './ui.js'
+    './ui.js',
+    './frontend-patterns.js'
 ];
 
 // Install Event

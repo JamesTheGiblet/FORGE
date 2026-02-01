@@ -128,7 +128,8 @@ function renderMessages() {
                 </div>
             ` : '';
             
-            const dependencyGraphHtml = msg.dependencyGraph ? renderDependencyGraph(msg.dependencyGraph, msg.id) : '';
+            const dependencyGraphHtml = (msg.dependencyGraph && typeof renderDependencyGraph === 'function') ? 
+                renderDependencyGraph(msg.dependencyGraph, msg.id) : '';
 
             messageDiv.innerHTML = `
                 <div class="message-bubble">

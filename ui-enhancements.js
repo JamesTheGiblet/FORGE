@@ -226,7 +226,21 @@ function enableDependencyAutoGeneration() {
         window.submitIntent = submitIntentWithDependencies;
         
         console.log('[FORGE] Dependency auto-generation enabled');
+        
+        // Ensure Frontend Patterns are loaded
+        if (typeof FrontendPatterns === 'undefined' && typeof window !== 'undefined') {
+            const script = document.createElement('script');
+            script.src = './frontend-patterns.js';
+            script.onload = () => console.log('[FORGE] Frontend Patterns loaded dynamically');
+            document.head.appendChild(script);
+        }
     }
+}
+
+// Expose functions to window
+if (typeof window !== 'undefined') {
+    window.renderDependencyGraph = renderDependencyGraph;
+    window.submitIntentWithDependencies = submitIntentWithDependencies;
 }
 
 // Auto-enable when this script loads (if in browser)
