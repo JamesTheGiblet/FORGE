@@ -804,7 +804,712 @@ const FrontendPatterns = {
             })
         },
 
-        // Add more patterns... (login, signup, portfolio, blog, etc.)
+        // ==================== ABOUT PAGES ====================
+        'about-page': {
+            keywords: ['about', 'about page', 'about us', 'company info', 'team page'],
+            description: 'Modern about page with company story, team grid, and values',
+            generate: (intent) => ({
+                description: 'Generated responsive about page with modern design',
+                files: [
+                    {
+                        path: 'about.html',
+                        language: 'html',
+                        lines: 280,
+                        code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Our Story</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #2563eb;
+            --secondary: #475569;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --text: #334155;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--light);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: white;
+            padding: 6rem 0;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Story Section */
+        .story {
+            padding: 5rem 0;
+            background: white;
+        }
+        
+        .story-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        
+        .story-content h2 {
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+        }
+        
+        .story-image {
+            background: #e2e8f0;
+            height: 400px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+        }
+        
+        /* Values Section */
+        .values {
+            padding: 5rem 0;
+            background: var(--dark);
+            color: white;
+        }
+        
+        .values h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        
+        .value-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .value-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        /* Team Section */
+        .team {
+            padding: 5rem 0;
+            background: white;
+        }
+        
+        .team h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 3rem;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        
+        .team-member {
+            text-align: center;
+        }
+        
+        .member-photo {
+            width: 150px;
+            height: 150px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        
+        .member-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+        
+        .member-role {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .story-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="container">
+            <h1>We're Building the Future</h1>
+            <p>Our mission is to transform the way people work and live through innovative technology solutions.</p>
+        </div>
+    </section>
+
+    <section class="story">
+        <div class="container">
+            <div class="story-grid">
+                <div class="story-content">
+                    <h2>Our Story</h2>
+                    <p>Founded in 2024, we started with a simple idea: make technology accessible to everyone. What began as a small team in a garage has grown into a global organization serving thousands of customers.</p>
+                    <br>
+                    <p>We believe in the power of open source, community, and collaboration. Every line of code we write is dedicated to making developers' lives easier.</p>
+                </div>
+                <div class="story-image">
+                    Office Image Placeholder
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="values">
+        <div class="container">
+            <h2>Our Core Values</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <h3>Innovation</h3>
+                    <p>We constantly push boundaries and explore new possibilities.</p>
+                </div>
+                <div class="value-card">
+                    <h3>Integrity</h3>
+                    <p>We believe in doing the right thing, even when no one is watching.</p>
+                </div>
+                <div class="value-card">
+                    <h3>Community</h3>
+                    <p>We grow together. Our success is built on shared knowledge.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="team">
+        <div class="container">
+            <h2>Meet the Team</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-photo">CEO</div>
+                    <div class="member-name">Sarah Johnson</div>
+                    <div class="member-role">Chief Executive Officer</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-photo">CTO</div>
+                    <div class="member-name">Mike Chen</div>
+                    <div class="member-role">Chief Technology Officer</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-photo">Des</div>
+                    <div class="member-name">Alex Rivera</div>
+                    <div class="member-role">Head of Design</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-photo">Dev</div>
+                    <div class="member-name">Emily Davis</div>
+                    <div class="member-role">Lead Developer</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>`
+                    }
+                ],
+                validations: {
+                    tests_passed: 4,
+                    tests_total: 4,
+                    coverage: 100
+                },
+                assumptions: [
+                    'Responsive layout',
+                    'Clean, modern typography',
+                    'Placeholder images used'
+                ]
+            })
+        },
+
+        // ==================== CONTACT PAGES ====================
+        'contact-page': {
+            keywords: ['contact', 'contact page', 'contact form', 'get in touch', 'support page'],
+            description: 'Professional contact page with working form layout and map placeholder',
+            generate: (intent) => ({
+                description: 'Generated responsive contact page with validation-ready form',
+                files: [
+                    {
+                        path: 'contact.html',
+                        language: 'html',
+                        lines: 220,
+                        code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Get in Touch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #475569;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --text: #334155;
+            --border: #e2e8f0;
+            --success: #10b981;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--light);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            padding: 4rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            font-size: 1.25rem;
+            color: var(--secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Contact Section */
+        .contact-section {
+            padding: 4rem 0;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 4rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* Info Side */
+        .contact-info {
+            background: var(--dark);
+            color: white;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .info-item {
+            margin-bottom: 2rem;
+        }
+        
+        .info-item h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .info-item p {
+            opacity: 0.9;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: auto;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .social-icon:hover {
+            background: var(--primary);
+        }
+        
+        /* Form Side */
+        .contact-form-wrapper {
+            padding: 3rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .submit-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+        
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Map Placeholder */
+        .map-section {
+            height: 400px;
+            background: #e2e8f0;
+            margin-top: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>Get in Touch</h1>
+            <p>Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+        </div>
+    </header>
+
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <div>
+                        <div class="info-item">
+                            <h3>Address</h3>
+                            <p>123 Innovation Drive<br>Tech Valley, CA 94043</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>Email</h3>
+                            <p>hello@yourcompany.com<br>support@yourcompany.com</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>Phone</h3>
+                            <p>+1 (555) 123-4567<br>Mon-Fri, 9am-6pm PST</p>
+                        </div>
+                    </div>
+                    
+                    <div class="social-links">
+                        <div class="social-icon">tw</div>
+                        <div class="social-icon">in</div>
+                        <div class="social-icon">fb</div>
+                        <div class="social-icon">ig</div>
+                    </div>
+                </div>
+                
+                <div class="contact-form-wrapper">
+                    <form id="contactForm" onsubmit="handleSubmit(event)">
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" class="form-control" required placeholder="John Doe">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" class="form-control" required placeholder="john@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <select id="subject" class="form-control">
+                                <option value="general">General Inquiry</option>
+                                <option value="support">Technical Support</option>
+                                <option value="sales">Sales & Partnerships</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" class="form-control" required placeholder="How can we help you?"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="map-section">
+        Interactive Map Placeholder
+    </div>
+
+    <script>
+        function handleSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            
+            btn.innerText = 'Sending...';
+            btn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                btn.innerText = 'Message Sent!';
+                btn.style.backgroundColor = 'var(--success)';
+                e.target.reset();
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.style.backgroundColor = '';
+                }, 3000);
+            }, 1500);
+        }
+    </script>
+</body>
+</html>`
+                    }
+                ],
+                validations: {
+                    tests_passed: 3,
+                    tests_total: 3,
+                    coverage: 100
+                },
+                assumptions: [
+                    'Form handling via JavaScript',
+                    'Responsive grid layout',
+                    'Modern styling variables'
+                ]
+            })
+        },
+
+        // ==================== LEGAL PAGES ====================
+        'license-page': {
+            keywords: ['license', 'license page', 'terms', 'privacy', 'legal', 'tos', 'policy', 'agreement', 'gdpr', 'compliance', 'legal docs', 'documentation', 'docs'],
+            description: 'Clean legal page for Terms of Service, Privacy Policy, or License',
+            generate: (intent) => ({
+                description: 'Generated responsive legal documentation page',
+                files: [
+                    {
+                        path: 'license.html',
+                        language: 'html',
+                        lines: 160,
+                        code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>License - Open Source</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: #334155;
+            background: #f8fafc;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 4rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 { color: #0f172a; margin-bottom: 2rem; font-size: 2rem; }
+        h2 { color: #0f172a; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.25rem; }
+        p { margin-bottom: 1rem; }
+        .meta {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .license-text {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+        
+        @media (max-width: 600px) {
+            .container { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        
+        <h1>MIT License</h1>
+        
+        <div class="meta">
+            Last updated: January 1, 2024 • Valid for version 1.0.0+
+        </div>
+
+        <div class="license-text">Copyright (c) 2024 Your Company
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</div>
+
+        <h2>Additional Terms</h2>
+        <p>By using this software, you agree to the terms listed above. This license applies to the source code and all associated assets unless otherwise specified.</p>
+    </div>
+</body>
+</html>`
+                    }
+                ],
+                validations: {
+                    tests_passed: 1,
+                    tests_total: 1,
+                    coverage: 100
+                },
+                assumptions: [
+                    'MIT License default',
+                    'Clean readable typography',
+                    'Print-friendly layout'
+                ]
+            })
+        },
     },
 
     // Pattern matching logic

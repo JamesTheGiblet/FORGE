@@ -1213,11 +1213,7 @@ function saveApiKey(key) {
     localStorage.setItem('apiKey', key);
 }
 
-function saveProvider(provider) {
-    state.settings.provider = provider;
-    localStorage.setItem('provider', provider);
-    
-    // Update model options based on provider
+function updateModelOptions(provider) {
     const modelSelect = document.getElementById('modelSelect');
     modelSelect.innerHTML = '';
     
@@ -1248,6 +1244,14 @@ function saveProvider(provider) {
         option.textContent = opt.label;
         modelSelect.appendChild(option);
     });
+    return options;
+}
+
+function saveProvider(provider) {
+    state.settings.provider = provider;
+    localStorage.setItem('provider', provider);
+    
+    const options = updateModelOptions(provider);
     
     // Select first option by default
     if (options.length > 0) {

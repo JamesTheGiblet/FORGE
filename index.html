@@ -1372,9 +1372,28 @@
                 if (typeof saveModel === 'function') saveModel(state.settings.model);
             }
             
-            // Sync UI with state
-            const modelSelect = document.getElementById('modelSelect');
-            if (modelSelect) modelSelect.value = state.settings.model;
+            // Sync Provider & Model UI
+            const providerSelect = document.getElementById('providerSelect');
+            if (providerSelect) {
+                // Auto-correct provider based on model
+                if (state.settings.model.includes('claude')) {
+                    state.settings.provider = 'anthropic';
+                } else if (state.settings.model.includes('gpt')) {
+                    state.settings.provider = 'openai';
+                } else if (state.settings.model.includes('llama') || state.settings.model.includes('mixtral') || state.settings.model.includes('gemma')) {
+                    state.settings.provider = 'groq';
+                }
+                
+                providerSelect.value = state.settings.provider || 'anthropic';
+                
+                // Update model options without resetting the selected model
+                if (typeof updateModelOptions === 'function') {
+                    updateModelOptions(state.settings.provider || 'anthropic');
+                }
+                
+                const modelSelect = document.getElementById('modelSelect');
+                if (modelSelect) modelSelect.value = state.settings.model;
+            }
             
             // Load AI mode
             const savedMode = localStorage.getItem('aiMode') || 'rule';

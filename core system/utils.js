@@ -199,7 +199,6 @@ const Storage = {
                 // Restore UI from loaded settings
                 if (document.getElementById('apiKeyInput')) document.getElementById('apiKeyInput').value = state.settings.apiKey || '';
                 if (document.getElementById('modelSelect')) document.getElementById('modelSelect').value = state.settings.model;
-                if (document.getElementById('providerSelect')) document.getElementById('providerSelect').value = state.settings.provider || 'anthropic';
                 if (document.getElementById('autoValidate')) document.getElementById('autoValidate').checked = state.settings.autoValidate;
                 if (document.getElementById('showSuggestions')) document.getElementById('showSuggestions').checked = state.settings.showSuggestions;
                 if (document.getElementById('saveConversations')) document.getElementById('saveConversations').checked = state.settings.saveConversations;
