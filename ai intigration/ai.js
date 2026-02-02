@@ -5,26 +5,35 @@
 const AI_PROVIDERS = {
     anthropic: {
         name: 'Anthropic',
-        endpoint: 'https://api.anthropic.com/v1/messages',
+        getEndpoint: () => {
+            if (typeof state !== 'undefined' && state.settings?.proxyUrl) return state.settings.proxyUrl;
+            return 'https://api.anthropic.com/v1/messages';
+        },
         headers: (apiKey) => ({
             'Content-Type': 'application/json',
             'x-api-key': apiKey,
             'anthropic-version': '2023-06-01',
             'anthropic-dangerously-allow-browser': 'true'
         }),
-        createBody: (model, prompt, systemPrompt) => ({
-            model: model,
-            max_tokens: 4000,
-            temperature: 0.7,
-            messages: [{ role: 'user', content: prompt }],
-            system: systemPrompt
-        }),
+        createBody: (model, prompt, systemPrompt) => {
+            const body = {
+                model: model,
+                max_tokens: 4000,
+                temperature: 0.7,
+                messages: [{ role: 'user', content: prompt }]
+            };
+            if (systemPrompt) body.system = systemPrompt;
+            return body;
+        },
         extractContent: (data) => data.content[0].text,
         extractUsage: (data) => data.usage || { input_tokens: 0, output_tokens: 0 }
     },
     openai: {
         name: 'OpenAI',
-        endpoint: 'https://api.openai.com/v1/chat/completions',
+        getEndpoint: () => {
+            if (typeof state !== 'undefined' && state.settings?.proxyUrl) return state.settings.proxyUrl;
+            return 'https://api.openai.com/v1/chat/completions';
+        },
         headers: (apiKey) => ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
@@ -43,7 +52,10 @@ const AI_PROVIDERS = {
     },
     groq: {
         name: 'Groq',
-        endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+        getEndpoint: () => {
+            if (typeof state !== 'undefined' && state.settings?.proxyUrl) return state.settings.proxyUrl;
+            return 'https://api.groq.com/openai/v1/chat/completions';
+        },
         headers: (apiKey) => ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
@@ -66,12 +78,13 @@ const SmartAI = {
     async callAPI(providerName, apiKey, model, prompt, systemPrompt, retries = 3) {
         const provider = AI_PROVIDERS[providerName] || AI_PROVIDERS['anthropic'];
         const cleanKey = apiKey ? apiKey.trim() : '';
+        const endpoint = provider.getEndpoint ? provider.getEndpoint() : provider.endpoint;
         
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
-                console.log(`[SmartAI] Sending request to ${provider.name} (${model}) - Attempt ${attempt}`);
+                console.log(`[SmartAI] Sending request to ${provider.name} (${model}) at ${endpoint} - Attempt ${attempt}`);
                 
-                const response = await fetch(provider.endpoint, {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: provider.headers(cleanKey),
                     body: JSON.stringify(provider.createBody(model, prompt, systemPrompt))

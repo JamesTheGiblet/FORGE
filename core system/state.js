@@ -10,7 +10,8 @@ const state = {
         saveConversations: true,
         showPatternSuggestions: true,
         apiKey: '',
-        model: 'claude-3-5-sonnet-20241022'
+        model: 'claude-3-5-sonnet-20241022',
+        provider: 'anthropic'
     },
     credits: {
         used: 0,

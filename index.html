@@ -1249,6 +1249,18 @@
                     </div>
                     
                     <div class="setting-item">
+                        <label class="setting-label">Proxy URL (Optional)</label>
+                        <input 
+                            type="text" 
+                            class="api-key-input" 
+                            id="proxyUrlInput"
+                            placeholder="http://localhost:3001/api/anthropic"
+                            oninput="saveProxyUrl(this.value)"
+                        >
+                        <small class="setting-small">Use a local proxy to bypass CORS issues.</small>
+                    </div>
+
+                    <div class="setting-item">
                         <label class="setting-label">Model</label>
                         <select class="api-key-input" id="modelSelect" onchange="saveModel(this.value)">
                             <option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet</option>

@@ -1255,6 +1255,11 @@ function saveProvider(provider) {
     }
 }
 
+function saveProxyUrl(url) {
+    state.settings.proxyUrl = url;
+    localStorage.setItem('proxyUrl', url);
+}
+
 function saveModel(model) {
     state.settings.model = model;
     localStorage.setItem('model', model);
@@ -1306,6 +1311,7 @@ function resetAll() {
                         saveConversations: true,
                         showPatternSuggestions: true,
                         apiKey: '',
+                        proxyUrl: '',
                         model: 'claude-3-5-sonnet-20241022',
                         provider: 'anthropic'
                     };
@@ -1318,6 +1324,7 @@ function resetAll() {
                     
                     // Reset UI
                     document.getElementById('apiKeyInput').value = '';
+                    document.getElementById('proxyUrlInput').value = '';
                     document.getElementById('modelSelect').value = 'claude-3-5-sonnet-20241022';
                     document.getElementById('providerSelect').value = 'anthropic';
                     document.getElementById('autoValidate').checked = true;
