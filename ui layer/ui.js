@@ -16,6 +16,11 @@ function addMessage(message) {
     state.messages.push(message);
     renderMessages();
     
+    // If it's a generation, auto-load into workspace
+    if (message.type === 'generation') {
+        renderWorkspace(message);
+    }
+    
     // Auto-scroll to bottom
     setTimeout(() => {
         const container = document.getElementById('messagesContainer');
@@ -69,45 +74,8 @@ function renderMessages() {
                 </div>
             `;
         } else if (msg.type === 'generation') {
-            const fileTree = msg.artifacts ? `
-                <div class="file-tree">
-                    <div class="tree-header" onclick="toggleTree(this)">
-                        <span class="tree-icon">▼</span>
-                        <span class="tree-title">Generated Files</span>
-                        <span class="tree-count">${msg.artifacts.length} ${msg.artifacts.length === 1 ? 'file' : 'files'}</span>
-                    </div>
-                    <div class="tree-items">
-                        ${msg.artifacts.map(file => `
-                            <div class="tree-item" onclick="showCodePreview('${msg.id}', '${file.path}')">
-                                <span class="item-icon">${getFileIcon(file.language)}</span>
-                                <span class="item-path">${escapeHtml(file.path)}</span>
-                                <span class="item-meta">${file.lines} lines</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ${msg.artifacts.map((file, fileIdx) => `
-                    <div class="code-preview" id="preview-${msg.id}-${fileIdx}" style="display: none;">
-                        <div class="file-preview">
-                            <div class="file-header" onclick="toggleFilePreview('preview-${msg.id}-${fileIdx}')">
-                                <span>${getFileIcon(file.language)} ${escapeHtml(file.path)}</span>
-                                <span class="item-meta">${file.lines} lines · ${file.language}</span>
-                            </div>
-                            <div class="code-snippet-wrapper" style="display: none;">
-                                <pre class="code-snippet">${escapeHtml(file.code.split('\n').slice(0, 15).join('\n'))}</pre>
-                                ${file.lines > 15 ? `
-                                    <div class="more-lines">
-                                        ... ${file.lines - 15} more lines
-                                        <button class="action-btn" onclick="showCodePreview('${msg.id}', '${file.path}')" style="margin-top: 0.5rem;">
-                                            View Full File
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            ` : '';
+            // Simplified Chat Bubble for Generation
+            const fileCount = msg.artifacts ? msg.artifacts.length : 0;
             
             const validationBadge = msg.validations ? `
                 <div class="validation-badge ${msg.validations.tests_passed === msg.validations.tests_total ? '' : 'warning'}">
@@ -116,36 +84,18 @@ function renderMessages() {
                 </div>
             ` : '';
 
-            const assumptions = msg.assumptions ? `
-                <div class="pattern-suggestions" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
-                    <div style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <span>⚙️</span>
-                        <span>Key Assumptions:</span>
-                    </div>
-                    <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
-                        ${msg.assumptions.map(a => `<li style="margin: 0.25rem 0;">${escapeHtml(a)}</li>`).join('')}
-                    </ul>
-                </div>
-            ` : '';
-            
-            const dependencyGraphHtml = (msg.dependencyGraph && typeof renderDependencyGraph === 'function') ? 
-                renderDependencyGraph(msg.dependencyGraph, msg.id) : '';
-
             messageDiv.innerHTML = `
                 <div class="message-bubble">
                     <div class="generation-header">
                         <span class="status-icon">✓</span>
                         <span>${escapeHtml(msg.content)}</span>
                     </div>
-                    ${fileTree}
-                    ${dependencyGraphHtml}
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin: 0.5rem 0;">
+                        Generated ${fileCount} files.
+                    </div>
                     ${validationBadge}
-                    ${assumptions}
                     <div class="action-bar">
-                        <button class="action-btn" onclick="viewAllCode(${index})">📝 View All Code</button>
-                        <button class="action-btn" onclick="runTests(${index})">⚡ Run Tests</button>
-                        <button class="action-btn" onclick="downloadCode(${index})">💾 Download</button>
-                        <button class="action-btn primary" onclick="refineCode(${index})">✨ Refine</button>
+                        <button class="action-btn primary" onclick="loadToWorkspace('${msg.id}')">📂 View in Workspace</button>
                     </div>
                 </div>
             `;
@@ -301,6 +251,92 @@ function renderMessages() {
     });
 }
 
+function loadToWorkspace(messageId) {
+    const msg = state.messages.find(m => m.id === messageId);
+    if (!msg) return;
+    renderWorkspace(msg);
+}
+
+function renderWorkspace(msg) {
+    const workspaceBody = document.getElementById('workspaceBody');
+    const workspaceTitle = document.getElementById('workspaceTitle');
+    const workspaceActions = document.getElementById('workspaceActions');
+    
+    if (!msg.artifacts || msg.artifacts.length === 0) return;
+
+    // Update Header
+    workspaceTitle.textContent = msg.content.length > 40 ? msg.content.substring(0, 40) + '...' : msg.content;
+    
+    // Update Actions
+    const msgIndex = state.messages.findIndex(m => m.id === msg.id);
+    workspaceActions.innerHTML = `
+        <button class="btn-icon" onclick="runTests(${msgIndex})" title="Run Tests">⚡</button>
+        <button class="btn-icon" onclick="downloadCode(${msgIndex})" title="Download">💾</button>
+        <button class="btn-icon" onclick="refineCode(${msgIndex})" title="Refine">✨</button>
+    `;
+
+    // Build Layout
+    workspaceBody.innerHTML = `
+        <div class="workspace-sidebar">
+            <div class="file-tree" style="border:none; margin:0; border-radius:0; background:transparent;">
+                <div class="tree-header" style="background:transparent; cursor:default;">
+                    <span class="tree-title" style="font-weight:600; color:var(--text-secondary);">EXPLORER</span>
+                </div>
+                <div class="tree-items">
+                    ${msg.artifacts.map((file, idx) => `
+                        <div class="tree-item" onclick="openFileInWorkspace('${msg.id}', ${idx}, this)">
+                            <span class="item-icon">${getFileIcon(file.language)}</span>
+                            <span class="item-path">${escapeHtml(file.path)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ${msg.assumptions ? `
+                <div style="padding: 1rem; border-top: 1px solid var(--glass-border);">
+                    <div style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.5rem;">ASSUMPTIONS</div>
+                    <ul style="font-size:0.8rem; color:var(--text-secondary); padding-left:1rem; margin:0;">
+                        ${msg.assumptions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+        </div>
+        <div class="workspace-editor" id="workspaceEditor">
+            <!-- Editor Content -->
+        </div>
+    `;
+
+    // Open first file by default
+    if (msg.artifacts.length > 0) {
+        const firstItem = workspaceBody.querySelector('.tree-item');
+        if (firstItem) openFileInWorkspace(msg.id, 0, firstItem);
+    }
+}
+
+function openFileInWorkspace(messageId, fileIndex, element) {
+    const msg = state.messages.find(m => m.id === messageId);
+    if (!msg || !msg.artifacts[fileIndex]) return;
+    
+    const file = msg.artifacts[fileIndex];
+    const editor = document.getElementById('workspaceEditor');
+    
+    // Highlight active item
+    document.querySelectorAll('.workspace-sidebar .tree-item').forEach(el => el.style.background = 'transparent');
+    if (element) element.style.background = 'var(--bg-primary)';
+
+    editor.innerHTML = `
+        <div class="file-header" style="border-bottom: 1px solid var(--glass-border);">
+            <span>${getFileIcon(file.language)} ${escapeHtml(file.path)}</span>
+            <span class="item-meta">${file.lines} lines · ${file.language}</span>
+        </div>
+        <div class="code-snippet-wrapper" style="flex:1; overflow:auto; position:relative;">
+            <div class="line-numbers" style="position:absolute; left:0; top:0; bottom:0; padding:1rem 0.5rem 1rem 1rem; background:var(--bg-secondary); border-right:1px solid var(--glass-border); text-align:right; color:var(--text-secondary); font-family:monospace; font-size:0.9rem; line-height:1.5;">
+                ${Array.from({length: file.lines}, (_, i) => i + 1).join('\n')}
+            </div>
+            <pre class="code-snippet" style="margin:0; padding:1rem 1rem 1rem 3.5rem; min-height:100%;">${escapeHtml(file.code)}</pre>
+        </div>
+    `;
+}
+
 function getFileIcon(language) {
     const icons = {
         javascript: '📄',
@@ -330,17 +366,6 @@ function toggleTree(header) {
     }
 }
 
-function toggleFilePreview(id) {
-    const preview = document.getElementById(id);
-    const wrapper = preview.querySelector('.code-snippet-wrapper');
-    
-    if (wrapper.style.display === 'none') {
-        wrapper.style.display = 'block';
-    } else {
-        wrapper.style.display = 'none';
-    }
-}
-
 // ====================
 // CORE FUNCTIONALITY
 // ====================
@@ -357,6 +382,16 @@ async function submitIntent() {
     document.getElementById('submitBtn').innerHTML = '<span class="loading">Generating</span>';
     
     // Add user intent message
+    
+    // Auto-rename session if it's the first message
+    const currentSession = state.sessions.find(s => s.id === state.currentSessionId);
+    if (currentSession && (currentSession.title === 'New Chat' || state.messages.length === 0)) {
+        // Generate a short title from intent (first 30 chars)
+        const newTitle = intent.length > 30 ? intent.substring(0, 30) + '...' : intent;
+        currentSession.title = newTitle;
+        renderHistoryList(); // Update sidebar if open
+    }
+
     addMessage({
         type: 'intent',
         content: intent,
@@ -497,51 +532,6 @@ async function submitIntent() {
 // ====================
 // ENHANCED ACTION FUNCTIONS
 // ====================
-function showCodePreview(messageId, filePath) {
-    const message = state.messages.find(m => m.id === messageId);
-    if (!message || !message.artifacts) return;
-    
-    const file = message.artifacts.find(f => f.path === filePath);
-    if (!file) return;
-    
-    // Close existing overlay if any
-    if (state.currentOverlay) {
-        document.body.removeChild(state.currentOverlay);
-    }
-    
-    // Create overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'code-overlay';
-    
-    const lineNumbers = Array.from({length: file.lines}, (_, i) => i + 1).join('\n');
-    
-    overlay.innerHTML = `
-        <div class="code-overlay-header">
-            <div class="code-overlay-title">
-                <span>${getFileIcon(file.language)}</span>
-                <span>${escapeHtml(file.path)}</span>
-                <span style="color: var(--text-secondary); margin-left: 1rem; font-size: 0.85rem;">
-                    ${file.lines} lines · ${file.language}
-                </span>
-            </div>
-            <button class="close-overlay-btn" onclick="closeCodeOverlay()">✕</button>
-        </div>
-        <div class="code-overlay-content">
-            <div class="code-editor-wrapper">
-                <div class="line-numbers">${lineNumbers}</div>
-                <pre class="code-snippet" style="margin-left: 60px;">${escapeHtml(file.code)}</pre>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-    state.currentOverlay = overlay;
-
-    // Add selection listener for inline refinement
-    const codeBlock = overlay.querySelector('.code-snippet');
-    codeBlock.addEventListener('mouseup', (e) => handleCodeSelection(e, messageId, filePath));
-}
-
 function closeCodeOverlay() {
     if (state.currentOverlay) {
         document.body.removeChild(state.currentOverlay);
@@ -549,14 +539,6 @@ function closeCodeOverlay() {
     }
     const btn = document.getElementById('refine-selection-btn');
     if (btn) btn.remove();
-}
-
-function viewAllCode(messageIndex) {
-    const message = state.messages[messageIndex];
-    if (!message.artifacts || message.artifacts.length === 0) return;
-    
-    // Show first file by default
-    showCodePreview(message.id, message.artifacts[0].path);
 }
 
 function handleCodeSelection(e, messageId, filePath) {
@@ -650,7 +632,8 @@ async function applySelectionRefinement(messageId, filePath, originalText, instr
         }
 
         // Refresh preview
-        showCodePreview(messageId, filePath);
+        // showCodePreview(messageId, filePath); // Removed overlay logic
+        openFileInWorkspace(messageId, fileIndex); // Refresh workspace
         
     } catch (error) {
         alert(`Refinement failed: ${error.message}`);
@@ -776,6 +759,11 @@ function downloadCode(messageIndex) {
         'Choose how you want to save your generated code:',
         [
             { 
+                text: 'ZIP Archive (.zip)', 
+                class: 'primary', 
+                onClick: () => downloadAsZip(message, filename)
+            },
+            { 
                 text: 'Markdown (.md)', 
                 class: 'primary', 
                 onClick: () => downloadAsMarkdown(message, filename)
@@ -788,6 +776,39 @@ function downloadCode(messageIndex) {
             { text: 'Cancel', class: 'cancel' }
         ]
     );
+}
+
+async function downloadAsZip(message, filename) {
+    if (typeof JSZip === 'undefined') {
+        alert('JSZip library is not loaded. Please check your internet connection.');
+        return;
+    }
+
+    const zip = new JSZip();
+    
+    // Add files to zip
+    message.artifacts.forEach(file => {
+        zip.file(file.path, file.code);
+    });
+    
+    // Add metadata/readme
+    const readmeContent = `# ${message.content}\n\nGenerated by FORGE on ${new Date(message.timestamp).toISOString()}\n\n## Assumptions\n${(message.assumptions || []).join('\n- ')}`;
+    zip.file('FORGE_README.md', readmeContent);
+
+    try {
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        updateStatus(`Downloaded ${filename}.zip`, 'online');
+    } catch (e) {
+        console.error('ZIP generation failed:', e);
+        alert('Failed to generate ZIP file');
+    }
 }
 
 function downloadAsMarkdown(message, filename) {
@@ -1175,6 +1196,57 @@ function toggleShortcuts() {
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
+function startNewChat() {
+    Storage.createSession();
+    renderMessages();
+    renderHistoryList();
+    updateStatus('New chat started', 'online');
+    
+    // Close panels if open
+    document.getElementById('historyPanel').style.display = 'none';
+}
+
+function toggleHistory() {
+    const panel = document.getElementById('historyPanel');
+    if (panel.style.display === 'none') {
+        renderHistoryList();
+        panel.style.display = 'flex';
+        // Close settings if open
+        document.getElementById('settingsPanel').style.display = 'none';
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function renderHistoryList() {
+    const container = document.getElementById('historyList');
+    if (!container) return;
+    
+    container.innerHTML = state.sessions.map(session => `
+        <div class="history-item ${session.id === state.currentSessionId ? 'active' : ''}" onclick="loadProject('${session.id}')">
+            <div class="history-title">${escapeHtml(session.title)}</div>
+            <div class="history-date">${new Date(session.lastModified).toLocaleDateString()}</div>
+            <button class="delete-session-btn" onclick="deleteProject(event, '${session.id}')" title="Delete">×</button>
+        </div>
+    `).join('');
+}
+
+function loadProject(id) {
+    Storage.loadSession(id);
+    renderMessages();
+    renderHistoryList();
+    updateStatus('Project loaded', 'online');
+}
+
+function deleteProject(e, id) {
+    e.stopPropagation();
+    if (confirm('Delete this project?')) {
+        Storage.deleteSession(id);
+        renderMessages(); // In case current was deleted
+        renderHistoryList();
+    }
+}
+
 // ====================
 // SETTINGS FUNCTIONS
 // ====================
@@ -1183,6 +1255,8 @@ function toggleSettings() {
     if (panel.style.display === 'none') {
         panel.style.display = 'flex';
         state.isSettingsOpen = true;
+        // Close history if open
+        document.getElementById('historyPanel').style.display = 'none';
     } else {
         panel.style.display = 'none';
         state.isSettingsOpen = false;

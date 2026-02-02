@@ -13,6 +13,19 @@ async function submitIntentWithDependencies() {
     
     if (!intent || state.isGenerating) return;
     
+    // INTERCEPTION: Check for Context Gathering
+    if (typeof ContextAI !== 'undefined' && ContextAI.isActive()) {
+        input.value = '';
+        addMessage({
+            type: 'intent',
+            content: intent,
+            timestamp: Date.now(),
+            role: 'user'
+        });
+        ContextAI.handleInput(intent);
+        return;
+    }
+
     input.value = '';
     state.isGenerating = true;
     document.getElementById('submitBtn').disabled = true;
@@ -41,14 +54,23 @@ async function submitIntentWithDependencies() {
     
     let result;
     
+    // Get current project context
+    const context = typeof ProjectUtils !== 'undefined' ? ProjectUtils.getContext() : '';
+    
+    // Append Gathered User Context
+    if (typeof ContextAI !== 'undefined') {
+        const userContext = ContextAI.getContext();
+        if (userContext) context += `\n\nUSER REQUIREMENTS & CONTEXT:\n${userContext}`;
+    }
+    
     try {
         // STEP 1: Initial code generation
         if (state.aiMode === 'smart' && state.settings.apiKey) {
-            result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model, state.settings.provider || 'anthropic');
+            result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model, state.settings.provider || 'anthropic', context);
         } else if (state.aiMode === 'hybrid') {
             if (state.settings.apiKey) {
                 try {
-                    result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model, state.settings.provider || 'anthropic');
+                    result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model, state.settings.provider || 'anthropic', context);
                 } catch (error) {
                     result = RuleBasedAI.generate(intent);
                 }
@@ -232,10 +254,10 @@ function enableDependencyAutoGeneration() {
         // Ensure Pattern System is loaded
         if (typeof PatternSystem === 'undefined' && typeof window !== 'undefined') {
             const s1 = document.createElement('script');
-            s1.src = './Core System/system.js';
+            s1.src = 'core system/system.js';
             s1.onload = () => {
                 const s2 = document.createElement('script');
-                s2.src = './Core System/library.js';
+                s2.src = 'core system/library.js';
                 document.head.appendChild(s2);
             };
             document.head.appendChild(s1);
@@ -244,7 +266,7 @@ function enableDependencyAutoGeneration() {
         // Ensure Readme Patterns are loaded (Safety net for cached index.html)
         if (typeof ReadmePatterns === 'undefined' && typeof window !== 'undefined') {
             const script = document.createElement('script');
-            script.src = './Pattern Libraries/readme-patterns.js';
+            script.src = 'pattern libraries/readme-patterns.js';
             document.head.appendChild(script);
         }
     }

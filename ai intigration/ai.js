@@ -122,14 +122,18 @@ const SmartAI = {
         }
     },
 
-    async generate(intent, apiKey, model, provider = 'anthropic') {
+    async generate(intent, apiKey, model, provider = 'anthropic', context = '') {
         if (!apiKey || apiKey.length < 20) {
             throw new Error('Invalid API key. Please check your settings.');
         }
 
-        const prompt = `As a code generation AI, create a complete, production-ready implementation for: "${intent}"
+        let prompt = `As a code generation AI, create a complete, production-ready implementation for: "${intent}"\n`;
 
-Generate ONLY valid JSON in this exact format (no markdown, no extra text):
+        if (context) {
+            prompt += `\nCURRENT PROJECT STRUCTURE:\n${context}\n\nIMPORTANT: Integrate the new code with this existing structure. Use correct relative imports to link to existing files. Place new files in appropriate directories.\n`;
+        }
+
+        prompt += `\nGenerate ONLY valid JSON in this exact format (no markdown, no extra text):
 {
     "description": "Brief description of what was generated",
     "files": [

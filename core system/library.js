@@ -112,6 +112,31 @@ module.exports = mongoose.model('Resource', ResourceSchema);`
         })
     });
 
+    ps.register('routes', {
+        type: 'backend',
+        description: 'Express router for a resource',
+        keywords: ['routes', 'router', 'endpoints', 'api routes'],
+        generate: () => ({
+            path: 'src/routes/resource.js',
+            language: 'javascript',
+            lines: 25,
+            code: `const express = require('express');
+const router = express.Router();
+const controller = require('../controllers/resource.controller');
+
+router.route('/')
+    .get(controller.getAll)
+    .post(controller.create);
+
+router.route('/:id')
+    .get(controller.getOne)
+    .put(controller.update)
+    .delete(controller.delete);
+
+module.exports = router;`
+        })
+    });
+
     // ==================== BACKEND: NEW (5) ====================
 
     ps.register('api-gateway', {

@@ -167,20 +167,56 @@ const DependencyUtils = {
 };
 
 // ====================
+// PROJECT CONTEXT UTILITIES
+// ====================
+const ProjectUtils = {
+    getFiles() {
+        const files = new Map();
+        // Iterate chronologically to get latest versions
+        state.messages.forEach(msg => {
+            if (msg.artifacts) {
+                msg.artifacts.forEach(file => {
+                    files.set(file.path, file);
+                });
+            }
+        });
+        return Array.from(files.values());
+    },
+
+    getContext() {
+        const files = this.getFiles();
+        if (files.length === 0) return '';
+        
+        return files.map(f => `- ${f.path} (${f.language})`).join('\n');
+    }
+};
+
+// ====================
 // LOCAL STORAGE
 // ====================
 const Storage = {
     save() {
         try {
-            const data = {
-                messages: state.messages,
+            // Save Global State
+            const globalData = {
                 settings: state.settings,
                 credits: state.credits,
                 analytics: state.analytics,
-                timestamp: Date.now(),
-                version: '1.0.0'
+                sessions: state.sessions,
+                currentSessionId: state.currentSessionId
             };
-            localStorage.setItem('forge_app', JSON.stringify(data));
+            localStorage.setItem('forge_global', JSON.stringify(globalData));
+
+            // Save Current Session
+            if (state.currentSessionId) {
+                const sessionData = {
+                    id: state.currentSessionId,
+                    messages: state.messages,
+                    lastModified: Date.now()
+                };
+                localStorage.setItem(`forge_session_${state.currentSessionId}`, JSON.stringify(sessionData));
+            }
+            
             this.updateStorageUsage();
         } catch (e) {
             console.warn('Failed to save to localStorage:', e);
@@ -189,12 +225,55 @@ const Storage = {
 
     load() {
         try {
-            const data = JSON.parse(localStorage.getItem('forge_app'));
-            if (data) {
-                state.messages = data.messages || [];
-                state.settings = { ...state.settings, ...(data.settings || {}) };
-                state.credits = data.credits || state.credits;
-                state.analytics = data.analytics || state.analytics;
+            // Migration: Check for legacy single-file data
+            const legacy = localStorage.getItem('forge_app');
+            if (legacy) {
+                try {
+                    const data = JSON.parse(legacy);
+                    // Migrate global data
+                    state.settings = { ...state.settings, ...(data.settings || {}) };
+                    state.credits = data.credits || state.credits;
+                    state.analytics = data.analytics || state.analytics;
+                    
+                    // Migrate messages to a new session
+                    if (data.messages && data.messages.length > 0) {
+                        const id = `session_${Date.now()}`;
+                        state.sessions.push({
+                            id,
+                            title: 'Previous Project (Migrated)',
+                            lastModified: data.timestamp || Date.now()
+                        });
+                        localStorage.setItem(`forge_session_${id}`, JSON.stringify({
+                            id,
+                            messages: data.messages,
+                            lastModified: Date.now()
+                        }));
+                        state.currentSessionId = id;
+                    }
+                    localStorage.removeItem('forge_app');
+                } catch(e) { console.error('Migration failed', e); }
+            }
+
+            // Load Global Data
+            const globalData = JSON.parse(localStorage.getItem('forge_global'));
+            if (globalData) {
+                state.settings = { ...state.settings, ...(globalData.settings || {}) };
+                state.credits = globalData.credits || state.credits;
+                state.analytics = globalData.analytics || state.analytics;
+                state.sessions = globalData.sessions || [];
+                state.currentSessionId = globalData.currentSessionId;
+            }
+
+            // Load Session Data
+            if (state.currentSessionId) {
+                this.loadSession(state.currentSessionId);
+            } else if (state.sessions.length > 0) {
+                // Catch up: Load most recent
+                const last = state.sessions.sort((a,b) => b.lastModified - a.lastModified)[0];
+                this.loadSession(last.id);
+            } else {
+                this.createSession();
+            }
                 
                 // Restore UI from loaded settings
                 if (document.getElementById('apiKeyInput')) document.getElementById('apiKeyInput').value = state.settings.apiKey || '';
@@ -203,15 +282,57 @@ const Storage = {
                 if (document.getElementById('showSuggestions')) document.getElementById('showSuggestions').checked = state.settings.showSuggestions;
                 if (document.getElementById('saveConversations')) document.getElementById('saveConversations').checked = state.settings.saveConversations;
                 if (document.getElementById('showPatternSuggestions')) document.getElementById('showPatternSuggestions').checked = state.settings.showPatternSuggestions;
-            }
         } catch (e) {
             console.warn('Failed to load from localStorage:', e);
         }
     },
 
-    clear() {
-        localStorage.removeItem('forge_app');
+    createSession() {
+        const id = `session_${Date.now()}`;
+        state.currentSessionId = id;
         state.messages = [];
+        state.sessions.unshift({
+            id,
+            title: 'New Chat',
+            lastModified: Date.now()
+        });
+        this.save();
+        return id;
+    },
+
+    loadSession(id) {
+        const data = JSON.parse(localStorage.getItem(`forge_session_${id}`));
+        if (data) {
+            state.currentSessionId = id;
+            state.messages = data.messages || [];
+            this.save(); // Update global current ID
+        } else {
+            // Session missing? Remove from list
+            state.sessions = state.sessions.filter(s => s.id !== id);
+            this.createSession();
+        }
+    },
+
+    deleteSession(id) {
+        state.sessions = state.sessions.filter(s => s.id !== id);
+        localStorage.removeItem(`forge_session_${id}`);
+        
+        if (state.currentSessionId === id) {
+            if (state.sessions.length > 0) {
+                this.loadSession(state.sessions[0].id);
+            } else {
+                this.createSession();
+            }
+        } else {
+            this.save();
+        }
+    },
+
+    clear() {
+        localStorage.clear(); // Clear everything
+        state.messages = [];
+        state.sessions = [];
+        state.currentSessionId = null;
         state.credits.used = 0;
         state.credits.apiCalls = 0;
         state.analytics.totalGenerations = 0;

@@ -2,6 +2,8 @@
 // STATE MANAGEMENT
 // ====================
 const state = {
+    currentSessionId: null,
+    sessions: [],
     messages: [],
     aiMode: 'rule',
     settings: {
@@ -26,6 +28,12 @@ const state = {
         mostUsedPatterns: {},
         dailyUsage: {},
         totalTokens: 0
+    },
+    contextGathering: {
+        active: false,
+        phase: 0,
+        questionIndex: 0,
+        data: {}
     },
     isGenerating: false,
     isSettingsOpen: false,
