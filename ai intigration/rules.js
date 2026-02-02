@@ -485,24 +485,27 @@ module.exports = ForgeTheory;`
             }
         }
         
-        // Check Frontend Patterns
-        if (typeof FrontendPatterns !== 'undefined') {
-            for (const [id, pattern] of Object.entries(FrontendPatterns.patterns)) {
+        // Check PatternSystem (Smart Registry)
+        if (typeof PatternSystem !== 'undefined') {
+            const systemPatterns = PatternSystem.getAll();
+            systemPatterns.forEach(pattern => {
+                // Skip if already in local patterns to avoid duplicates
+                if (this.patterns[pattern.id]) return;
+
                 let score = 0;
-                pattern.keywords.forEach(keyword => {
-                    if (lowerIntent.includes(keyword)) score += 2;
-                    if (words.some(word => word.includes(keyword) || keyword.includes(word))) score += 1;
+                pattern.keywords.forEach(k => {
+                    if (lowerIntent.includes(k)) score += 2;
                 });
                 
                 if (score > 0) {
                     suggestions.push({
-                        id,
+                        id: pattern.id,
                         ...pattern,
                         score,
-                        matchReason: score >= 3 ? 'Strong match' : 'Frontend pattern'
+                        matchReason: score >= 3 ? 'Strong match' : `${pattern.type} pattern`
                     });
                 }
-            }
+            });
         }
         
         // Sort by score and limit
@@ -1720,13 +1723,32 @@ module.exports = app;`
         const lowerIntent = intent.toLowerCase();
         let result = null;
         
-        // Check Frontend Patterns
-        if (typeof FrontendPatterns !== 'undefined') {
-            result = FrontendPatterns.generate(intent);
-            if (result) return result;
-        } else if (typeof window !== 'undefined' && window.FrontendPatterns) {
-            result = window.FrontendPatterns.generate(intent);
-            if (result) return result;
+        // Check Readme Patterns (Prioritize smart generation logic)
+        if (typeof ReadmePatterns !== 'undefined') {
+            const lower = intent.toLowerCase();
+            if (lower.includes('readme') || lower.includes('documentation') || lower.includes('docs')) {
+                return ReadmePatterns.generate(intent);
+            }
+        }
+        
+        // Check PatternSystem
+        if (typeof PatternSystem !== 'undefined') {
+            const matches = PatternSystem.findMatches(intent);
+            if (matches.length > 0) {
+                // Use the best match (first one usually)
+                const artifact = matches[0].generate(intent);
+                
+                // Normalize to expected format if it's a single file artifact
+                if (!artifact.files && (artifact.code || artifact.path)) {
+                    return {
+                        description: `Generated ${matches[0].name || matches[0].id || 'code'}`,
+                        files: [artifact],
+                        validations: { tests_passed: 0, tests_total: 0, coverage: 0 },
+                        assumptions: ['Pattern-based generation']
+                    };
+                }
+                return artifact;
+            }
         }
         
         // Find matching pattern
@@ -1756,3 +1778,13 @@ module.exports = app;`
         return result;
     }
 };
+
+// Expose globally
+if (typeof window !== 'undefined') {
+    window.PatternLibrary = PatternLibrary;
+    window.DependencyResolver = DependencyResolver;
+    window.RuleBasedAI = RuleBasedAI;
+}
+if (typeof module !== 'undefined') {
+    module.exports = { PatternLibrary, DependencyResolver, RuleBasedAI };
+}

@@ -384,7 +384,8 @@ async function submitIntent() {
             result = await SmartAI.generate(
                 intent, 
                 state.settings.apiKey,
-                state.settings.model
+                state.settings.model,
+                state.settings.provider || 'anthropic'
             );
         } else if (state.aiMode === 'hybrid') {
             if (state.settings.apiKey) {
@@ -392,7 +393,8 @@ async function submitIntent() {
                     result = await SmartAI.generate(
                         intent,
                         state.settings.apiKey,
-                        state.settings.model
+                        state.settings.model,
+                        state.settings.provider || 'anthropic'
                     );
                 } catch (error) {
                     result = RuleBasedAI.generate(intent);
@@ -626,7 +628,13 @@ async function applySelectionRefinement(messageId, filePath, originalText, instr
     try {
         let newText;
         if (state.aiMode === 'smart' && state.settings.apiKey) {
-            newText = await SmartAI.refineSnippet(originalText, instruction, state.settings.apiKey, state.settings.model);
+            newText = await SmartAI.refineSnippet(
+                originalText, 
+                instruction, 
+                state.settings.apiKey, 
+                state.settings.model,
+                state.settings.provider || 'anthropic'
+            );
         } else {
             // Fallback for rule-based or no API key
             newText = `/* Refined: ${instruction} */\n${originalText}`;
@@ -653,7 +661,7 @@ async function runTests(messageIndex) {
     const message = state.messages[messageIndex];
     
     // Filter for testable files (JavaScript)
-    const jsFiles = message.artifacts ? message.artifacts.filter(f => f.language === 'javascript') : [];
+    const jsFiles = message.artifacts ? message.artifacts.filter(f => ['javascript', 'js', 'node'].includes(f.language?.toLowerCase())) : [];
     
     if (jsFiles.length === 0) {
         addMessage({
@@ -752,7 +760,37 @@ function updateTestProgress(testId, results, completed, total) {
 function downloadCode(messageIndex) {
     const message = state.messages[messageIndex];
     if (!message.artifacts) return;
+
+    // Smart naming: forge-intent-slug-date
+    const dateStr = new Date().toISOString().split('T')[0];
+    const slug = message.content
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .substring(0, 40);
     
+    const filename = `forge-${slug}-${dateStr}`;
+
+    showModal(
+        'Download Format',
+        'Choose how you want to save your generated code:',
+        [
+            { 
+                text: 'Markdown (.md)', 
+                class: 'primary', 
+                onClick: () => downloadAsMarkdown(message, filename)
+            },
+            { 
+                text: 'JSON (.json)', 
+                class: 'primary', 
+                onClick: () => downloadAsJSON(message, filename)
+            },
+            { text: 'Cancel', class: 'cancel' }
+        ]
+    );
+}
+
+function downloadAsMarkdown(message, filename) {
     // Create a zip-like structure in markdown
     let content = `# Generated Code\n# ${message.content}\n\n`;
     content += `Generated: ${new Date(message.timestamp).toISOString()}\n`;
@@ -775,17 +813,36 @@ function downloadCode(messageIndex) {
         content += `- Coverage: ${message.validations.coverage}%\n`;
     }
     
-    const blob = new Blob([content], { type: 'text/markdown' });
+    triggerDownload(content, `${filename}.md`, 'text/markdown');
+}
+
+function downloadAsJSON(message, filename) {
+    const data = {
+        meta: {
+            intent: message.content,
+            timestamp: message.timestamp,
+            mode: state.aiMode
+        },
+        files: message.artifacts,
+        assumptions: message.assumptions,
+        validations: message.validations
+    };
+    
+    triggerDownload(JSON.stringify(data, null, 2), `${filename}.json`, 'application/json');
+}
+
+function triggerDownload(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `forge-code-${Date.now()}.md`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
     
     addMessage({
         type: 'system',
-        content: `✅ Code downloaded successfully!`,
+        content: `✅ Downloaded ${filename}`,
         timestamp: Date.now(),
         role: 'system'
     });
@@ -913,7 +970,12 @@ async function applyRefinement(messageIndex, refinementType) {
     try {
         let result;
         if (state.aiMode === 'smart' && state.settings.apiKey) {
-            result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model);
+            result = await SmartAI.generate(
+                intent, 
+                state.settings.apiKey, 
+                state.settings.model,
+                state.settings.provider || 'anthropic'
+            );
         } else {
             result = RuleBasedAI.generate(intent);
         }
@@ -923,24 +985,26 @@ async function applyRefinement(messageIndex, refinementType) {
         
         // Calculate diffs between original and refined
         const changes = [];
-        result.files.forEach((refinedFile, idx) => {
-            const originalFile = originalFiles[idx];
-            if (originalFile && originalFile.code !== refinedFile.code) {
-                const diff = DiffUtils.generateDiff(originalFile.code, refinedFile.code);
-                const stats = DiffUtils.calculateDiffStats(diff);
-                
-                changes.push({
-                    file: refinedFile.path,
-                    lines: [1, refinedFile.lines],
-                    oldCode: originalFile.code,
-                    newCode: refinedFile.code,
-                    diff: diff,
-                    added: stats.added,
-                    removed: stats.removed,
-                    changePercentage: stats.changePercentage
-                });
-            }
-        });
+        if (result && result.files) {
+            result.files.forEach((refinedFile, idx) => {
+                const originalFile = originalFiles[idx];
+                if (originalFile && originalFile.code !== refinedFile.code) {
+                    const diff = DiffUtils.generateDiff(originalFile.code, refinedFile.code);
+                    const stats = DiffUtils.calculateDiffStats(diff);
+                    
+                    changes.push({
+                        file: refinedFile.path,
+                        lines: [1, refinedFile.lines],
+                        oldCode: originalFile.code,
+                        newCode: refinedFile.code,
+                        diff: diff,
+                        added: stats.added,
+                        removed: stats.removed,
+                        changePercentage: stats.changePercentage
+                    });
+                }
+            });
+        }
         
         addMessage({
             type: 'refinement',
@@ -1149,6 +1213,48 @@ function saveApiKey(key) {
     localStorage.setItem('apiKey', key);
 }
 
+function saveProvider(provider) {
+    state.settings.provider = provider;
+    localStorage.setItem('provider', provider);
+    
+    // Update model options based on provider
+    const modelSelect = document.getElementById('modelSelect');
+    modelSelect.innerHTML = '';
+    
+    let options = [];
+    if (provider === 'anthropic') {
+        options = [
+            { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+            { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+            { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' }
+        ];
+    } else if (provider === 'openai') {
+        options = [
+            { value: 'gpt-4o', label: 'GPT-4o' },
+            { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+            { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
+        ];
+    } else if (provider === 'groq') {
+        options = [
+            { value: 'llama3-70b-8192', label: 'Llama 3 70B' },
+            { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
+            { value: 'gemma-7b-it', label: 'Gemma 7B' }
+        ];
+    }
+    
+    options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        modelSelect.appendChild(option);
+    });
+    
+    // Select first option by default
+    if (options.length > 0) {
+        saveModel(options[0].value);
+    }
+}
+
 function saveModel(model) {
     state.settings.model = model;
     localStorage.setItem('model', model);
@@ -1200,7 +1306,8 @@ function resetAll() {
                         saveConversations: true,
                         showPatternSuggestions: true,
                         apiKey: '',
-                        model: 'claude-sonnet-4-20250514'
+                        model: 'claude-3-5-sonnet-20241022',
+                        provider: 'anthropic'
                     };
                     state.credits.used = 0;
                     state.credits.apiCalls = 0;
@@ -1211,7 +1318,8 @@ function resetAll() {
                     
                     // Reset UI
                     document.getElementById('apiKeyInput').value = '';
-                    document.getElementById('modelSelect').value = 'claude-sonnet-4-20250514';
+                    document.getElementById('modelSelect').value = 'claude-3-5-sonnet-20241022';
+                    document.getElementById('providerSelect').value = 'anthropic';
                     document.getElementById('autoValidate').checked = true;
                     document.getElementById('showSuggestions').checked = true;
                     document.getElementById('saveConversations').checked = true;
@@ -1255,7 +1363,7 @@ function showModal(title, body, actions) {
 
 function handleModalAction(index, hasCallback) {
     if (hasCallback && window._modalCallbacks[index]) {
-        window._modalCallbacksindex;
+        window._modalCallbacks[index]();
     }
     closeModal();
 }
@@ -1375,5 +1483,6 @@ function installPWA() {
     });
 }
 
+window.addEventListener('load', initPWA);
 // Initialize PWA support on load
 window.addEventListener('load', initPWA);

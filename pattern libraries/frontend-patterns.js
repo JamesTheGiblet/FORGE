@@ -837,4 +837,18 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 if (typeof window !== 'undefined') {
     window.FrontendPatterns = FrontendPatterns;
+
+    // Auto-register with PatternSystem
+    if (typeof PatternSystem !== 'undefined') {
+        Object.keys(FrontendPatterns.patterns).forEach(key => {
+            const pattern = FrontendPatterns.patterns[key];
+            PatternSystem.register(key, {
+                type: 'frontend',
+                description: pattern.description,
+                keywords: pattern.keywords,
+                generate: pattern.generate
+            });
+        });
+        console.log('[FrontendPatterns] Registered patterns with PatternSystem');
+    }
 }

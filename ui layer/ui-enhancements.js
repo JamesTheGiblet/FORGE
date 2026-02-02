@@ -44,11 +44,11 @@ async function submitIntentWithDependencies() {
     try {
         // STEP 1: Initial code generation
         if (state.aiMode === 'smart' && state.settings.apiKey) {
-            result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model);
+            result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model, state.settings.provider || 'anthropic');
         } else if (state.aiMode === 'hybrid') {
             if (state.settings.apiKey) {
                 try {
-                    result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model);
+                    result = await SmartAI.generate(intent, state.settings.apiKey, state.settings.model, state.settings.provider || 'anthropic');
                 } catch (error) {
                     result = RuleBasedAI.generate(intent);
                 }
@@ -88,12 +88,14 @@ async function submitIntentWithDependencies() {
         }
         
         // STEP 3: Build final dependency graph
-        const finalGraph = typeof DependencyEngine !== 'undefined' ? 
+        const finalGraph = (typeof DependencyEngine !== 'undefined' && result.files) ? 
             DependencyEngine.buildGraph(result.files) : null;
         
         // Cache original code for versioning
         const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        state.originalCodeCache.set(messageId, JSON.parse(JSON.stringify(result.files)));
+        if (result.files) {
+            state.originalCodeCache.set(messageId, JSON.parse(JSON.stringify(result.files)));
+        }
         
         // STEP 4: Add generation message with graph
         addMessage({
@@ -227,11 +229,22 @@ function enableDependencyAutoGeneration() {
         
         console.log('[FORGE] Dependency auto-generation enabled');
         
-        // Ensure Frontend Patterns are loaded
-        if (typeof FrontendPatterns === 'undefined' && typeof window !== 'undefined') {
+        // Ensure Pattern System is loaded
+        if (typeof PatternSystem === 'undefined' && typeof window !== 'undefined') {
+            const s1 = document.createElement('script');
+            s1.src = './Core System/system.js';
+            s1.onload = () => {
+                const s2 = document.createElement('script');
+                s2.src = './Core System/library.js';
+                document.head.appendChild(s2);
+            };
+            document.head.appendChild(s1);
+        }
+        
+        // Ensure Readme Patterns are loaded (Safety net for cached index.html)
+        if (typeof ReadmePatterns === 'undefined' && typeof window !== 'undefined') {
             const script = document.createElement('script');
-            script.src = './frontend-patterns.js';
-            script.onload = () => console.log('[FORGE] Frontend Patterns loaded dynamically');
+            script.src = './Pattern Libraries/readme-patterns.js';
             document.head.appendChild(script);
         }
     }

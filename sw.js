@@ -1,18 +1,21 @@
-const CACHE_NAME = 'forge-v1';
+const CACHE_NAME = 'forge-v2';
 const ASSETS = [
     './',
     './index.html',
     './style.css',
-    './state.js',
-    './utils.js',
-    './rules.js',
-    './ai.js',
-    './testing.js',
-    './versioning.js',
-    './dependencies.js',
-    './ui-enhancements.js',
-    './ui.js',
-    './frontend-patterns.js'
+    './core system/state.js',
+    './core system/utils.js',
+    './ai intigration/rules.js',
+    './ai intigration/ai.js',
+    './advanced features/testing.js',
+    './advanced features/versioning.js',
+    './advanced features/dependencies.js',
+    './ui layer/ui-enhancements.js',
+    './ui layer/ui.js',
+    './pattern libraries/frontend-patterns.js',
+    './core system/system.js',
+    './core system/library.js',
+    './pattern libraries/readme-patterns.js'
 ];
 
 // Install Event
