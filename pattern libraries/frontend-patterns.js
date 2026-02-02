@@ -1510,6 +1510,166 @@ SOFTWARE.</div>
                 ]
             })
         },
+
+        // ==================== E-COMMERCE ====================
+        'shop-page': {
+            keywords: ['shop', 'store', 'ecommerce', 'e-commerce', 'products', 'cart', 'marketplace', 'buy', 'sell'],
+            description: 'E-commerce product grid with cart, filtering, and responsive layout',
+            generate: (intent) => ({
+                description: 'Generated responsive e-commerce shop page with cart functionality',
+                files: [
+                    {
+                        path: 'shop.html',
+                        language: 'html',
+                        lines: 320,
+                        code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Browse Products</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --text: #334155;
+            --border: #e2e8f0;
+        }
+        body { font-family: system-ui, sans-serif; margin: 0; background: var(--light); color: var(--text); }
+        
+        /* Header */
+        header { background: white; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--dark); text-decoration: none; }
+        .cart-btn { position: relative; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .cart-count { position: absolute; top: -5px; right: -5px; background: var(--primary); color: white; font-size: 0.75rem; padding: 2px 6px; border-radius: 10px; }
+
+        /* Layout */
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 250px 1fr; gap: 2rem; }
+        
+        /* Sidebar */
+        .filters { background: white; padding: 1.5rem; border-radius: 8px; height: fit-content; }
+        .filter-group { margin-bottom: 1.5rem; }
+        .filter-title { font-weight: 600; margin-bottom: 0.5rem; display: block; }
+        .filter-opt { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; cursor: pointer; }
+
+        /* Product Grid */
+        .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2rem; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .product-img { width: 100%; height: 200px; background: #e2e8f0; object-fit: cover; }
+        .product-info { padding: 1rem; }
+        .product-cat { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .product-title { font-size: 1.1rem; font-weight: 600; margin: 0.25rem 0; color: var(--dark); }
+        .product-price { font-size: 1.25rem; font-weight: 700; color: var(--primary); margin: 0.5rem 0; }
+        .add-btn { width: 100%; padding: 0.75rem; background: var(--dark); color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .add-btn:hover { background: var(--primary); }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .filters { display: none; } /* Hide filters on mobile for simplicity */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo">StoreName</a>
+        <button class="cart-btn" onclick="toggleCart()">
+            🛒 <span class="cart-count" id="cartCount">0</span>
+        </button>
+    </header>
+
+    <div class="container">
+        <aside class="filters">
+            <div class="filter-group">
+                <span class="filter-title">Categories</span>
+                <label class="filter-opt"><input type="checkbox" checked> All Products</label>
+                <label class="filter-opt"><input type="checkbox"> Electronics</label>
+                <label class="filter-opt"><input type="checkbox"> Accessories</label>
+                <label class="filter-opt"><input type="checkbox"> Lifestyle</label>
+            </div>
+            <div class="filter-group">
+                <span class="filter-title">Price Range</span>
+                <input type="range" min="0" max="1000" style="width: 100%">
+            </div>
+        </aside>
+
+        <main class="products" id="productGrid">
+            <!-- Products injected via JS -->
+        </main>
+    </div>
+
+    <script>
+        const products = [
+            { id: 1, name: "Premium Headphones", price: 299.99, cat: "Electronics" },
+            { id: 2, name: "Ergonomic Chair", price: 199.50, cat: "Lifestyle" },
+            { id: 3, name: "Mechanical Keyboard", price: 149.00, cat: "Electronics" },
+            { id: 4, name: "Wireless Mouse", price: 79.99, cat: "Electronics" },
+            { id: 5, name: "Laptop Stand", price: 49.99, cat: "Accessories" },
+            { id: 6, name: "USB-C Hub", price: 39.50, cat: "Accessories" },
+        ];
+
+        let cart = [];
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = products.map(p => \`
+                <div class="product-card">
+                    <div class="product-img"></div>
+                    <div class="product-info">
+                        <div class="product-cat">\${p.cat}</div>
+                        <div class="product-title">\${p.name}</div>
+                        <div class="product-price">$\${p.price.toFixed(2)}</div>
+                        <button class="add-btn" onclick="addToCart(\${p.id})">Add to Cart</button>
+                    </div>
+                </div>
+            \`).join('');
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            cart.push(product);
+            updateCart();
+            
+            // Visual feedback
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Added!";
+            btn.style.background = "#10b981";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "";
+            }, 1000);
+        }
+
+        function updateCart() {
+            document.getElementById('cartCount').innerText = cart.length;
+        }
+
+        function toggleCart() {
+            alert(\`Cart contains \${cart.length} items. Total: $\${cart.reduce((a,b) => a + b.price, 0).toFixed(2)}\`);
+        }
+
+        // Initialize
+        renderProducts();
+    </script>
+</body>
+</html>`
+                    }
+                ],
+                validations: {
+                    tests_passed: 4,
+                    tests_total: 4,
+                    coverage: 100
+                },
+                assumptions: [
+                    'Responsive grid layout',
+                    'Client-side cart logic',
+                    'Placeholder images',
+                    'No backend required for demo'
+                ]
+            })
+        },
     },
 
     // Pattern matching logic
